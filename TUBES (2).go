@@ -11,11 +11,11 @@ type Pendapatan struct {
 }
 
 type ID struct {
-	namaUsser string
-	PassUser  string
-	Kategori  string
-	Target    int
-	masukan   arrPendapatan
+	Username       string
+	PassUser       string
+	Kategori       string
+	Target         int
+	dataPendapatan arrPendapatan
 }
 type detail struct {
 	nama, deskripsi       string
@@ -51,7 +51,7 @@ func main() {
 }
 
 //fungsi untuk tampilan login
-func tampilkanDashboard() {
+func tampilkanDashboard(user *ID) {
 	fmt.Println("\n=== Aplikasi Pencatatan Pendapatan ===")
 	fmt.Println("1. Tambah Pendapatan Baru")
 	fmt.Println("2. Tampilkan Laporan Keuangan")
@@ -93,11 +93,20 @@ func menu() {
 
 //fungsi untuk menambahkan pengguna/register
 func menuRegister(arrayPengguna *arrID, nArrayPengguna *int) {
-	var namaUsser, Kategori, PassUser string
+	var namaUser, Kategori, PassUser string
 	var TargetUsser int
 
 	fmt.Println("Nama Pengguna:")
-	fmt.Scan(&namaUsser)
+	fmt.Scan(&namaUser)
+
+	for i := 0; i < *nArrayPengguna; i++ {
+		if namaUser == arrayPengguna[i].Username {
+			fmt.Println("Nama sudah dipakai user lain, masukkan nama lain")
+			fmt.Scan(&namaUser)
+			i = -1 // reset ulang pengecekan
+		}
+	}
+
 	fmt.Println("Password Akun:")
 	fmt.Println("Pastikan password terdiri angka, simbol dan huruf besar")
 	fmt.Scan(&PassUser)
@@ -105,15 +114,9 @@ func menuRegister(arrayPengguna *arrID, nArrayPengguna *int) {
 	fmt.Scan(&Kategori)
 	fmt.Println("Masukan Target Pencapaian Pendapatan (Input Target Hanya Angka): ")
 	fmt.Scan(&TargetUsser)
-	for i := 0; i < *nArrayPengguna; i++ {
-		if namaUsser == arrayPengguna[i].namaUsser {
-			fmt.Println("Nama sudah dipakai user lain, masukkan nama lain")
-			fmt.Scan(&namaUsser)
-			i = 0
-		}
-	}
+
 	if *nArrayPengguna < NMAX {
-		arrayPengguna[*nArrayPengguna].namaUsser = namaUsser
+		arrayPengguna[*nArrayPengguna].Username = namaUser
 		arrayPengguna[*nArrayPengguna].PassUser = PassUser
 		arrayPengguna[*nArrayPengguna].Kategori = Kategori
 		arrayPengguna[*nArrayPengguna].Target = TargetUsser
@@ -132,9 +135,10 @@ func menuLogin(arrayPengguna *arrID, nArrayPengguna *int) {
 	fmt.Scan(&password)
 
 	for i := 0; i < *nArrayPengguna; i++ {
-		if nama == arrayPengguna[i].namaUsser && password == arrayPengguna[i].PassUser {
+		if nama == arrayPengguna[i].Username && password == arrayPengguna[i].PassUser {
 			fmt.Println("Selamat! Anda berhasil login.")
-			tampilkanDashboard()
+			tampilkanDashboard(&arrayPengguna[i])
+
 			return // login berhasil, keluar dari fungsi
 		}
 	}
@@ -152,7 +156,8 @@ func tambahPendapatan(array *ID, n *int) {
 	fmt.Println("Pilih (1/2) :")
 
 	var pilihan, jenisSideHustle, jenisPassive int
-	for *n = 0; *n < NMAX; (*n)++ {
+	if *n < NMAX {
+
 		fmt.Scan(&pilihan)
 		switch pilihan {
 		case 1:
@@ -165,13 +170,13 @@ func tambahPendapatan(array *ID, n *int) {
 
 			switch jenisSideHustle {
 			case 1:
-				array.masukan[*n].nama = "Freelance"
+				array.dataPendapatan[*n].nama = "Freelance"
 				KetSideHustle(array, n)
 			case 2:
-				array.masukan[*n].nama = "Konten Kreator"
+				array.dataPendapatan[*n].nama = "Konten Kreator"
 				KetSideHustle(array, n)
 			case 3:
-				array.masukan[*n].nama = "Jualan Online"
+				array.dataPendapatan[*n].nama = "Jualan Online"
 				KetSideHustle(array, n)
 
 			}
@@ -185,18 +190,19 @@ func tambahPendapatan(array *ID, n *int) {
 
 			switch jenisPassive {
 			case 1:
-				array.masukan[*n].nama = "Uang Sewa Lahan"
+				array.dataPendapatan[*n].nama = "Uang Sewa Lahan"
 				KetSideHustle(array, n)
 			case 2:
-				array.masukan[*n].nama = "Royalti"
+				array.dataPendapatan[*n].nama = "Royalti"
 				KetSideHustle(array, n)
 			}
 
-			tampilkanDashboard()
+			//tampilkanDashboard(&arrayPengguna[i])
 		}
-
+		(*n)++
+	} else {
+		fmt.Println("Data pendapatan sudah penuh.")
 	}
-
 }
 
 // fungsi untuk laporan keuangan
@@ -238,26 +244,26 @@ func TampilanProgres(array *ID, n *int) {
 func hitungProgress(array *ID, n *int) float64 {
 	var total int
 	for i := 0; i < *n; i++ {
-		total += array.masukan[i].jumlah
+		total += array.dataPendapatan[i].jumlah
 	}
-	return (float64(total) / float64(*n)) * 100
+	return (float64(total) / float64(array.Target)) * 100
 }
 func KetSideHustle(array *ID, n *int) {
 	fmt.Println("Masukan nominal:")
-	fmt.Scan(&array.masukan[*n].jumlah)
+	fmt.Scan(&array.dataPendapatan[*n].jumlah)
 
 	fmt.Println("Tanggal Pemasukan")
 	fmt.Println("masukan Tanggal:")
-	fmt.Scan(&array.masukan[*n].tanggal)
+	fmt.Scan(&array.dataPendapatan[*n].tanggal)
 
 	fmt.Println("masukan bulan:")
-	fmt.Scan(&array.masukan[*n].bulan)
+	fmt.Scan(&array.dataPendapatan[*n].bulan)
 
 	fmt.Println("masukan tahun:")
-	fmt.Scan(&array.masukan[*n].tahun)
+	fmt.Scan(&array.dataPendapatan[*n].tahun)
 
 	fmt.Println("Deskripsi: ")
-	fmt.Scan(&array.masukan[*n].deskripsi)
+	fmt.Scan(&array.dataPendapatan[*n].deskripsi)
 
 	fmt.Println("Pendapatan berhasil ditambahkan!")
 
