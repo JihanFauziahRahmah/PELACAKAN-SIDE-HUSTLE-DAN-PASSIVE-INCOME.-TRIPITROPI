@@ -45,7 +45,7 @@ func main() {
 			fmt.Println("Terima kasih telah menggunakan aplikasi.")
 			return
 		default:
-			fmt.Println("Pilihan tidak valid. AAA")
+			fmt.Println("Pilihan tidak valid.")
 		}
 	}
 }
@@ -60,26 +60,37 @@ func tampilkanDashboard(user *ID) {
 	fmt.Println("5. Logout")
 	fmt.Println("Pilih menu: (1/2/3/4/5): ")
 
-	var pilihan, n int
-	var array ID
+	var pilihan int
+	n := hitungJumlahPendapatan(user)
+
 	fmt.Scan(&pilihan)
 
 	switch pilihan {
 	case 1:
-		tambahPendapatan(&array, &n)
+		tambahPendapatan(user, &n)
 	case 2:
-		laporan(&array, &n)
+		laporan(user, &n)
 	case 3:
 		TampilanAnalisis()
 	case 4:
-		TampilanProgres(&array, &n)
+		TampilanProgres(user, &n)
 	case 5:
 		return
 	}
-
 }
 
-//fungsi untuk tampilan login
+func hitungJumlahPendapatan(user *ID) int {
+	// hitung jumlah data pendapatan yang sudah diisi (jumlah != 0)
+	count := 0
+	for i := 0; i < NMAX; i++ {
+		if user.dataPendapatan[i].jumlah != 0 {
+			count++
+		}
+	}
+	return count
+}
+
+//fungsi untuk tampilan utama menu
 func menu() {
 	fmt.Println("========== Selamat Datang =========")
 	fmt.Println("======= Di Aplikasi Pelacak =======")
@@ -197,7 +208,6 @@ func tambahPendapatan(array *ID, n *int) {
 				KetSideHustle(array, n)
 			}
 
-			//tampilkanDashboard(&arrayPengguna[i])
 		}
 		(*n)++
 	} else {
@@ -205,49 +215,157 @@ func tambahPendapatan(array *ID, n *int) {
 	}
 }
 
-// fungsi untuk laporan keuangan
+// fungsi laporan keuangan lengkap dengan pilihan laporan bulanan dan tahunan
 func laporan(array *ID, n *int) {
-
 	var pilihanlap int
+	var bulan, tahun int
+
 	fmt.Println("===============")
 	fmt.Println("1. Tampilkan Laporan Bulanan")
 	fmt.Println("2. Tampilkan Laporan Tahunan")
-	fmt.Println("Pilih (1/2): ")
+	fmt.Print("Pilih (1/2): ")
 	fmt.Scan(&pilihanlap)
 
 	switch pilihanlap {
 	case 1:
-		lapBulanan()
+		fmt.Print("Masukkan Bulan (1-12): ")
+		fmt.Scan(&bulan)
+		fmt.Print("Masukkan Tahun: ")
+		fmt.Scan(&tahun)
+		lapBulanan(array, n, bulan, tahun)
 	case 2:
-		lapTahunan()
+		fmt.Print("Masukkan Tahun: ")
+		fmt.Scan(&tahun)
+		lapTahunan(array, n, tahun)
+	default:
+		fmt.Println("Pilihan tidak valid.")
 	}
 }
 
-func lapBulanan() {
-	fmt.Println("Berikut adalah laporan bulanan anda: ")
+// Binary search lower bound untuk tanggal
+func binarySearchLowerBound(array *ID, n int, t, b, th int) int {
+	low := 0
+	high := n - 1
+	result := -1
+	for low <= high {
+		mid := (low + high) / 2
+		d := array.dataPendapatan[mid]
 
+		if d.tahun > th ||
+			(d.tahun == th && d.bulan > b) ||
+			(d.tahun == th && d.bulan == b && d.tanggal >= t) {
+			result = mid
+			high = mid - 1
+		} else {
+			low = mid + 1
+		}
+	}
+	return result
 }
 
-func lapTahunan() {
-	fmt.Println("Berikut adalah laporan tahunan anda: ")
+// Binary search upper bound untuk tanggal
+func binarySearchUpperBound(array *ID, n int, t, b, th int) int {
+	low := 0
+	high := n - 1
+	result := -1
+	for low <= high {
+		mid := (low + high) / 2
+		d := array.dataPendapatan[mid]
 
+		if d.tahun < th ||
+			(d.tahun == th && d.bulan < b) ||
+			(d.tahun == th && d.bulan == b && d.tanggal <= t) {
+			result = mid
+			low = mid + 1
+		} else {
+			high = mid - 1
+		}
+	}
+	return result
 }
 
+// Sorting data pendapatan berdasarkan tanggal (tahun, bulan, tanggal)
+func sortPendapatanByDate(array *ID, n *int) {
+	for i := 0; i < *n-1; i++ {
+		for j := i + 1; j < *n; j++ {
+			d1 := array.dataPendapatan[i]
+			d2 := array.dataPendapatan[j]
+
+			if d1.tahun > d2.tahun ||
+				(d1.tahun == d2.tahun && d1.bulan > d2.bulan) ||
+				(d1.tahun == d2.tahun && d1.bulan == d2.bulan && d1.tanggal > d2.tanggal) {
+				temp := array.dataPendapatan[i]
+				array.dataPendapatan[i] = array.dataPendapatan[j]
+				array.dataPendapatan[j] = temp
+			}
+		}
+	}
+}
+
+func lapBulanan(array *ID, n *int, bulan, tahun int) {
+	sortPendapatanByDate(array, n)
+	fmt.Printf("\nLaporan Pendapatan Bulanan %02d-%d\n", bulan, tahun)
+
+	start := binarySearchLowerBound(array, *n, 1, bulan, tahun)
+	end := binarySearchUpperBound(array, *n, 31, bulan, tahun)
+
+	if start == -1 || end == -1 || start > end {
+		fmt.Println("Tidak ada data pendapatan di bulan ini.")
+		return
+	}
+
+	var total float64 = 0
+	for i := start; i <= end; i++ {
+		d := array.dataPendapatan[i]
+		fmt.Printf("- %s: %d (Tanggal %d)\n", d.nama, d.jumlah, d.tanggal)
+		total += float64(d.jumlah)
+	}
+	fmt.Printf("Total Pendapatan Bulan %02d Tahun %d = %.2f\n", bulan, tahun, total)
+}
+
+func lapTahunan(array *ID, n *int, tahun int) {
+	sortPendapatanByDate(array, n)
+	fmt.Printf("\nLaporan Pendapatan Tahunan Tahun %d\n", tahun)
+
+	start := binarySearchLowerBound(array, *n, 1, 1, tahun)
+	end := binarySearchUpperBound(array, *n, 31, 12, tahun)
+
+	if start == -1 || end == -1 || start > end {
+		fmt.Println("Tidak ada data pendapatan di tahun ini.")
+		return
+	}
+
+	var total float64 = 0
+	for i := start; i <= end; i++ {
+		d := array.dataPendapatan[i]
+		fmt.Printf("- %s: %d (Tanggal %02d-%02d-%d)\n", d.nama, d.jumlah, d.tanggal, d.bulan, d.tahun)
+		total += float64(d.jumlah)
+	}
+	fmt.Printf("Total Pendapatan Tahun %d = %.2f\n", tahun, total)
+}
+
+// Fungsi untuk menampilkan analisis (sementara kosong)
 func TampilanAnalisis() {
-
+	fmt.Println("Fitur analisis belum tersedia.")
 }
 
+// Fungsi untuk menampilkan progres pencapaian target
 func TampilanProgres(array *ID, n *int) {
-	fmt.Printf("Target Pendapatan Anda Bulan ini : %d", array.Target)
-	fmt.Printf("Persentase Target Tercapai Bulan ini sebesar %f", hitungProgress(array, n))
+	fmt.Printf("Target Pendapatan Anda Bulan ini : %d\n", array.Target)
+	fmt.Printf("Persentase Target Tercapai Bulan ini sebesar %.2f%%\n", hitungProgress(array, n))
 }
+
 func hitungProgress(array *ID, n *int) float64 {
 	var total int
 	for i := 0; i < *n; i++ {
 		total += array.dataPendapatan[i].jumlah
 	}
+	if array.Target == 0 {
+		return 0
+	}
 	return (float64(total) / float64(array.Target)) * 100
 }
+
 func KetSideHustle(array *ID, n *int) {
 	fmt.Println("Masukan nominal:")
 	fmt.Scan(&array.dataPendapatan[*n].jumlah)
@@ -266,5 +384,4 @@ func KetSideHustle(array *ID, n *int) {
 	fmt.Scan(&array.dataPendapatan[*n].deskripsi)
 
 	fmt.Println("Pendapatan berhasil ditambahkan!")
-
 }
