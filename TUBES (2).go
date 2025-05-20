@@ -293,21 +293,17 @@ func sortPendapatanByDate(array *ID, n *int) {
 		key = array.dataPendapatan[i]
 		j = i - 1
 
-		// Selama data sebelumnya lebih "besar" dari data sekarang, geser ke kanan
 		for j >= 0 &&
 			(array.dataPendapatan[j].tahun > key.tahun ||
 				(array.dataPendapatan[j].tahun == key.tahun && array.dataPendapatan[j].bulan > key.bulan) ||
 				(array.dataPendapatan[j].tahun == key.tahun && array.dataPendapatan[j].bulan == key.bulan && array.dataPendapatan[j].tanggal > key.tanggal)) {
-
-			// Geser data ke kanan
 			array.dataPendapatan[j+1] = array.dataPendapatan[j]
 			j = j - 1
 		}
-
-		// Tempatkan data pada posisi yang tepat
 		array.dataPendapatan[j+1] = key
 	}
 }
+
 func lapBulanan(array *ID, n *int, bulan, tahun int) {
 	sortPendapatanByDate(array, n)
 	fmt.Printf("\nLaporan Pendapatan Bulanan %02d-%d\n", bulan, tahun)
