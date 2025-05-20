@@ -286,22 +286,28 @@ func binarySearchUpperBound(array *ID, n int, t, b, th int) int {
 
 // Sorting data pendapatan berdasarkan tanggal (tahun, bulan, tanggal)
 func sortPendapatanByDate(array *ID, n *int) {
-	for i := 0; i < *n-1; i++ {
-		for j := i + 1; j < *n; j++ {
-			d1 := array.dataPendapatan[i]
-			d2 := array.dataPendapatan[j]
+	var i, j int
+	var key detail
 
-			if d1.tahun > d2.tahun ||
-				(d1.tahun == d2.tahun && d1.bulan > d2.bulan) ||
-				(d1.tahun == d2.tahun && d1.bulan == d2.bulan && d1.tanggal > d2.tanggal) {
-				temp := array.dataPendapatan[i]
-				array.dataPendapatan[i] = array.dataPendapatan[j]
-				array.dataPendapatan[j] = temp
-			}
+	for i = 1; i < *n; i++ {
+		key = array.dataPendapatan[i]
+		j = i - 1
+
+		// Selama data sebelumnya lebih "besar" dari data sekarang, geser ke kanan
+		for j >= 0 &&
+			(array.dataPendapatan[j].tahun > key.tahun ||
+				(array.dataPendapatan[j].tahun == key.tahun && array.dataPendapatan[j].bulan > key.bulan) ||
+				(array.dataPendapatan[j].tahun == key.tahun && array.dataPendapatan[j].bulan == key.bulan && array.dataPendapatan[j].tanggal > key.tanggal)) {
+
+			// Geser data ke kanan
+			array.dataPendapatan[j+1] = array.dataPendapatan[j]
+			j = j - 1
 		}
+
+		// Tempatkan data pada posisi yang tepat
+		array.dataPendapatan[j+1] = key
 	}
 }
-
 func lapBulanan(array *ID, n *int, bulan, tahun int) {
 	sortPendapatanByDate(array, n)
 	fmt.Printf("\nLaporan Pendapatan Bulanan %02d-%d\n", bulan, tahun)
